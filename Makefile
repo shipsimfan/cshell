@@ -2,7 +2,7 @@
 SRC_DIR := ./src
 OBJ_DIR := ./obj
 INCLUDE_DIR := ./include
-SYSROOT_DIR := ../../sysroot
+SYSROOT_DIR := ../sysroot
 
 # SOURCE FILES
 SRC_FILES := $(shell find $(SRC_DIR) -name '*.c')
