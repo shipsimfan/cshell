@@ -1,12 +1,18 @@
 #include <los.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 int main() {
-    console_write_str("Hello world!\n");
+    uint64_t* ptr = (uint64_t*)malloc(sizeof(uint64_t));
+
+    *ptr = 0xABCDEF;
+
+    printf("Hello World!\n%#lX\n", *ptr);
 
     ProcessID pid = execute("1:/LOS/CAT.APP");
-    wait_process(pid);
+    uint64_t status = wait_process(pid);
 
-    console_write_str("Cat exited!\n");
+    printf("Cat exited with status %#lX\n", status);
 
-    return 0;
+    return 0x12345678;
 }
