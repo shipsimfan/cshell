@@ -1,3 +1,7 @@
+#include <los.h>
+
 int main() {
-	return 0;
+    console_write_str("Hello world!\n");
+
+    return 0;
 }
