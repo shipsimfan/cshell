@@ -1,4 +1,6 @@
 #include <los.h>
+#include <stdio.h>
+#include <string.h>
 
 #define BUFFER_LENGTH 1024
 #define TAB_WIDTH 4
@@ -148,10 +150,23 @@ int main() {
     char buffer[BUFFER_LENGTH];
 
     while (1) {
-        console_write_str("> ");
+        console_write_str(" > ");
         read_line(buffer, BUFFER_LENGTH);
 
-        console_write_str(buffer);
-        console_write('\n');
+        if (strcmp(buffer, "exit") == 0) {
+            break;
+        } else {
+            ProcessID pid = execute(buffer);
+            if (pid == 0xFFFFFFFFFFFFFFFF) {
+                printf("Unable to execute %s\n", buffer);
+                continue;
+            }
+
+            uint64_t status = wait_process(pid);
+
+            if (status != 0) {
+                printf("Process exited with status %#lX\n", status);
+            }
+        }
     }
 }
