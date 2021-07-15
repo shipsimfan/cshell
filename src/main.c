@@ -1,44 +1,149 @@
 #include <los.h>
 
 #define BUFFER_LENGTH 1024
+#define TAB_WIDTH 4
 
-char read_char() {
+typedef struct {
+    uint64_t one;
+    uint64_t two;
+} Pair;
+
+Pair read_char() {
     Event e;
     while (1) {
         while (peek_event(&e)) {
-            if (e.type == 0) {
-                return (char)e.param1;
+            if (e.type == EVENT_TYPE_KEY_PRESS) {
+                Pair p;
+                p.one = e.param1;
+                p.two = e.param2;
+                return p;
             }
         }
+    }
+}
+
+char translate_keycode(uint64_t keycode, int caps) {
+    if (caps) {
+        switch (keycode) {
+        case KEYCODE_SPACE:
+            return ' ';
+        case KEYCODE_QUOTE:
+            return '"';
+        case KEYCODE_COMMA:
+            return ',';
+        case KEYCODE_MINUS:
+            return '_';
+        case KEYCODE_PERIOD:
+            return '.';
+        case KEYCODE_FORWARD_SLASH:
+            return '?';
+        case KEYCODE_0:
+            return ')';
+        case KEYCODE_1:
+            return '!';
+        case KEYCODE_2:
+            return '@';
+        case KEYCODE_3:
+            return '#';
+        case KEYCODE_4:
+            return '$';
+        case KEYCODE_5:
+            return '%';
+        case KEYCODE_6:
+            return '^';
+        case KEYCODE_7:
+            return '&';
+        case KEYCODE_8:
+            return '*';
+        case KEYCODE_9:
+            return '(';
+        case KEYCODE_SEMI_COLON:
+            return ':';
+        case KEYCODE_EQUAL:
+            return '+';
+        case KEYCODE_OPEN_SQUARE_BRACKET:
+            return '{';
+        case KEYCODE_BACKSLASH:
+            return '|';
+        case KEYCODE_CLOSE_SQUARE_BRACKET:
+            return '}';
+        case KEYCODE_TICK:
+            return '~';
+        default:
+            return ((char)keycode) - 'a' + 'A';
+        }
+    } else {
+        return (char)keycode;
     }
 }
 
 uint64_t read_line(char* buffer, uint64_t buffer_length) {
     uint64_t idx = 0;
     while (idx < buffer_length) {
-        char c = read_char();
-        if (c == 0x4B) {
-            buffer[idx] = 0;
-            console_write('\n');
-            return idx;
-        } else if (c == 0x3E) {
+        Pair p = read_char();
+        uint64_t keycode = p.one;
+        uint64_t keystate = p.two;
+
+        if (keycode == KEYCODE_NUM_ASTERICK) {
+            buffer[idx] = '*';
+            console_write('*');
+            idx++;
+        } else if (keycode == KEYCODE_NUM_MINUS) {
+            buffer[idx] = '-';
+            console_write('-');
+            idx++;
+        } else if (keycode == KEYCODE_NUM_PLUS) {
+            buffer[idx] = '+';
+            console_write('+');
+            idx++;
+        } else if (keycode == KEYCODE_NUM_PERIOD) {
+            buffer[idx] = '.';
+            console_write('.');
+            idx++;
+        } else if ((keycode >= KEYCODE_SPACE && keycode <= KEYCODE_EQUAL) || (keycode >= KEYCODE_OPEN_SQUARE_BRACKET && keycode <= KEYCODE_Z)) {
+            int caps_status = 0;
+            if (keystate & KEY_STATE_CAPS_LOCK) {
+                caps_status = !caps_status;
+            }
+
+            if ((keystate & KEY_STATE_LEFT_SHIFT) || (keystate & KEY_STATE_RIGHT_SHIFT)) {
+                caps_status = !caps_status;
+            }
+
+            char c = translate_keycode(keycode, caps_status);
+
+            buffer[idx] = c;
+            console_write(c);
+            idx++;
+        } else if (keycode == KEYCODE_BACKSPACE) {
             if (idx > 0) {
                 idx--;
                 console_write('\b');
             }
-            idx--;
-        } else {
-            buffer[idx] = c;
-            console_write(c);
-        }
+        } else if (keycode == KEYCODE_TAB) {
+            if (idx % TAB_WIDTH == 0) {
+                buffer[idx] = ' ';
+                console_write(' ');
+                idx++;
+            }
 
-        idx++;
+            for (int i = 0; i < TAB_WIDTH && idx < buffer_length && idx % TAB_WIDTH != 0; i++, idx++) {
+                buffer[idx] = ' ';
+                console_write(' ');
+            }
+        } else if (keycode == KEYCODE_ENTER) {
+            buffer[idx] = 0;
+            console_write('\n');
+            return idx;
+        }
     }
+
+    return idx;
 }
 
 int main() {
-    printf("\n  Lance OS Shell\n");
-    printf("==================\n\n");
+    console_write_str("\n    Lance OS Shell\n");
+    console_write_str("======================\n\n");
 
     char buffer[BUFFER_LENGTH];
 
