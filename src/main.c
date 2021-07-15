@@ -147,9 +147,12 @@ int main() {
     console_write_str("\n    Lance OS Shell\n");
     console_write_str("======================\n\n");
 
+    char cwd_buffer[BUFFER_LENGTH];
     char buffer[BUFFER_LENGTH];
 
     while (1) {
+        get_current_working_directory(cwd_buffer, BUFFER_LENGTH);
+        console_write_str(cwd_buffer);
         console_write_str(" > ");
         read_line(buffer, BUFFER_LENGTH);
 
