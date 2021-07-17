@@ -159,6 +159,7 @@ int parse_arguments(char* buffer) {
 }
 
 int main() {
+    console_clear();
     console_write_str("\n    Lance OS Shell\n");
     console_write_str("======================\n\n");
 
@@ -194,6 +195,8 @@ int main() {
                 console_write(' ');
             }
             console_write('\n');
+        } else if (strcmp(command, "clear") == 0) {
+            console_clear();
         } else {
             ProcessID pid = execute(command);
             if (pid == 0xFFFFFFFFFFFFFFFF) {
