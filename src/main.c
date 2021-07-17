@@ -156,8 +156,27 @@ int main() {
         console_write_str(" > ");
         read_line(buffer, BUFFER_LENGTH);
 
+        uint64_t args_start;
+        for (args_start = 0; args_start < BUFFER_LENGTH; args_start++) {
+            if (buffer[args_start] == ' ') {
+                buffer[args_start] = 0;
+                args_start++;
+                break;
+            }
+        }
+
         if (strcmp(buffer, "exit") == 0) {
             break;
+        } else if (strcmp(buffer, "cd") == 0) {
+            if (args_start == BUFFER_LENGTH) {
+                console_write_str("Argument required for command 'cd'\n");
+            } else {
+                if (set_current_working_directory(buffer + args_start) != 0) {
+                    console_write_str("Unable to locate ");
+                    console_write_str(buffer + args_start);
+                    console_write('\n');
+                }
+            }
         } else {
             ProcessID pid = execute(buffer);
             if (pid == 0xFFFFFFFFFFFFFFFF) {
