@@ -10,6 +10,9 @@ typedef struct {
     uint64_t two;
 } Pair;
 
+char* argv[256];
+char* command;
+
 Pair read_char() {
     Event e;
     while (1) {
@@ -143,6 +146,18 @@ uint64_t read_line(char* buffer, uint64_t buffer_length) {
     return idx;
 }
 
+int parse_arguments(char* buffer) {
+    command = strtok(buffer, " ");
+
+    for (int i = 0; i < 256; i++) {
+        argv[i] = strtok(NULL, " ");
+        if (argv[i] == NULL)
+            return i;
+    }
+
+    return 255;
+}
+
 int main() {
     console_write_str("\n    Lance OS Shell\n");
     console_write_str("======================\n\n");
@@ -155,32 +170,34 @@ int main() {
         console_write_str(cwd_buffer);
         console_write_str(" > ");
         read_line(buffer, BUFFER_LENGTH);
-
-        uint64_t args_start;
-        for (args_start = 0; args_start < BUFFER_LENGTH; args_start++) {
-            if (buffer[args_start] == ' ') {
-                buffer[args_start] = 0;
-                args_start++;
-                break;
-            }
+        if (buffer[0] == 0) {
+            continue;
         }
 
-        if (strcmp(buffer, "exit") == 0) {
+        int argc = parse_arguments(buffer);
+
+        if (strcmp(command, "exit") == 0) {
             break;
-        } else if (strcmp(buffer, "cd") == 0) {
-            if (args_start == BUFFER_LENGTH) {
+        } else if (strcmp(command, "cd") == 0) {
+            if (argc == 0) {
                 console_write_str("Argument required for command 'cd'\n");
             } else {
-                if (set_current_working_directory(buffer + args_start) != 0) {
+                if (set_current_working_directory(argv[0]) != 0) {
                     console_write_str("Unable to locate ");
-                    console_write_str(buffer + args_start);
+                    console_write_str(argv[0]);
                     console_write('\n');
                 }
             }
+        } else if (strcmp(command, "echo") == 0) {
+            for (int i = 0; i < argc; i++) {
+                console_write_str(argv[i]);
+                console_write(' ');
+            }
+            console_write('\n');
         } else {
-            ProcessID pid = execute(buffer);
+            ProcessID pid = execute(command);
             if (pid == 0xFFFFFFFFFFFFFFFF) {
-                printf("Unable to execute %s\n", buffer);
+                printf("Unable to execute %s\n", command);
                 continue;
             }
 
