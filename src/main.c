@@ -189,34 +189,11 @@ int main(int argc, const char** argv, const char** envp) {
                     console_write('\n');
                 }
             }
-        } else if (strcmp(command, "echo") == 0) {
-            for (int i = 1; i < argc; i++) {
-                console_write_str(arg_list[i]);
-                console_write(' ');
-            }
-            console_write('\n');
         } else if (strcmp(command, "clear") == 0) {
             console_clear();
         } else if (strcmp(command, "export") == 0) {
-            if (argc == 3) {
+            if (argc >= 3)
                 setenv(arg_list[1], arg_list[2], 1);
-            } else {
-                printf("Usage: export name value\n");
-            }
-        } else if (strcmp(command, "printenv") == 0) {
-            if (argc == 1) {
-                char** envp = environ;
-                while (*envp) {
-                    printf("%s\n", *envp);
-                    envp++;
-                }
-            } else if (argc == 2) {
-                char* environment_variable = getenv(arg_list[1]);
-                if (environment_variable != NULL)
-                    printf("%s\n", environment_variable);
-            } else {
-                printf("Usage: printenv [name]");
-            }
         } else {
             ProcessID pid = execute(command, (const char**)arg_list, (const char**)environ);
             if (pid == 0xFFFFFFFFFFFFFFFF) {
