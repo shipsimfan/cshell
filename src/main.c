@@ -10,7 +10,7 @@ typedef struct {
     uint64_t two;
 } Pair;
 
-char* argv[256];
+char* arg_list[256];
 char* command;
 
 Pair read_char() {
@@ -148,17 +148,18 @@ uint64_t read_line(char* buffer, uint64_t buffer_length) {
 
 int parse_arguments(char* buffer) {
     command = strtok(buffer, " ");
+    arg_list[0] = command;
 
-    for (int i = 0; i < 256; i++) {
-        argv[i] = strtok(NULL, " ");
-        if (argv[i] == NULL)
+    for (int i = 1; i < 256; i++) {
+        arg_list[i] = strtok(NULL, " ");
+        if (arg_list[i] == NULL)
             return i;
     }
 
     return 255;
 }
 
-int main() {
+int main(int argc, const char** argv) {
     console_clear();
     console_write_str("\n    Lance OS Shell\n");
     console_write_str("======================\n\n");
@@ -169,7 +170,7 @@ int main() {
     while (1) {
         get_current_working_directory(cwd_buffer, BUFFER_LENGTH);
         console_write_str(cwd_buffer);
-        console_write_str(" > ");
+        console_write_str("> ");
         read_line(buffer, BUFFER_LENGTH);
         if (buffer[0] == 0) {
             continue;
@@ -180,27 +181,25 @@ int main() {
         if (strcmp(command, "exit") == 0) {
             break;
         } else if (strcmp(command, "cd") == 0) {
-            if (argc == 0) {
-                console_write_str("Argument required for command 'cd'\n");
-            } else {
-                if (set_current_working_directory(argv[0]) != 0) {
-                    console_write_str("Unable to locate ");
-                    console_write_str(argv[0]);
+            if (argc >= 2) {
+                if (set_current_working_directory(arg_list[1]) != 0) {
+                    console_write_str("No such directory: ");
+                    console_write_str(arg_list[1]);
                     console_write('\n');
                 }
             }
         } else if (strcmp(command, "echo") == 0) {
-            for (int i = 0; i < argc; i++) {
-                console_write_str(argv[i]);
+            for (int i = 1; i < argc; i++) {
+                console_write_str(arg_list[i]);
                 console_write(' ');
             }
             console_write('\n');
         } else if (strcmp(command, "clear") == 0) {
             console_clear();
         } else {
-            ProcessID pid = execute(command);
+            ProcessID pid = execute(command, (const char**)arg_list);
             if (pid == 0xFFFFFFFFFFFFFFFF) {
-                printf("Unable to execute %s\n", command);
+                printf("Command not found: %s\n", command);
                 continue;
             }
 
