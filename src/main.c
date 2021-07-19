@@ -16,8 +16,14 @@ char* command;
 
 Pair read_char() {
     Event e;
+    int64_t status;
     while (1) {
-        while (peek_event(&e)) {
+        while ((status = peek_event(&e))) {
+            if (status != 1) {
+                printf("Error while peeking event: %li\n", status);
+                exit(1);
+            }
+
             if (e.type == EVENT_TYPE_KEY_PRESS) {
                 Pair p;
                 p.one = e.param1;
@@ -183,11 +189,9 @@ int main(int argc, const char** argv, const char** envp) {
             break;
         } else if (strcmp(command, "cd") == 0) {
             if (argc >= 2) {
-                if (set_current_working_directory(arg_list[1]) != 0) {
-                    console_write_str("No such directory: ");
-                    console_write_str(arg_list[1]);
-                    console_write('\n');
-                }
+                int64_t status = set_current_working_directory(arg_list[1]);
+                if (status < 0)
+                    printf("Error while opening %s: %li\n", arg_list[1], status);
             }
         } else if (strcmp(command, "clear") == 0) {
             console_clear();
@@ -196,16 +200,15 @@ int main(int argc, const char** argv, const char** envp) {
                 setenv(arg_list[1], arg_list[2], 1);
         } else {
             ProcessID pid = execute(command, (const char**)arg_list, (const char**)environ);
-            if (pid == 0xFFFFFFFFFFFFFFFF) {
-                printf("Command not found: %s\n", command);
+            if (pid < 0) {
+                printf("Error while executing %s: %li\n", command, pid);
                 continue;
             }
 
-            uint64_t status = wait_process(pid);
+            int64_t status = wait_process(pid);
 
-            if (status != 0) {
-                printf("Process exited with status %#lX\n", status);
-            }
+            if (status != 0)
+                printf("Process exited with status %li\n", status);
         }
     }
 }
