@@ -1,207 +1,36 @@
+#include "shell.h"
 #include <los.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define BUFFER_LENGTH 1024
-#define TAB_WIDTH 4
 
-typedef struct {
-    uint64_t one;
-    uint64_t two;
-} Pair;
+int main() {
+    printf("\n    Lance OS Shell\n");
+    printf("======================\n\n");
 
-char* arg_list[256];
-char* command;
+    char cwd[BUFFER_LENGTH];
 
-Pair read_char() {
-    Event e;
-    int64_t status;
-    while (1) {
-        while ((status = peek_event(&e))) {
-            if (status != 1) {
-                printf("Error while peeking event: %li\n", status);
-                exit(1);
-            }
-
-            if (e.type == EVENT_TYPE_KEY_PRESS) {
-                Pair p;
-                p.one = e.param1;
-                p.two = e.param2;
-                return p;
-            }
-        }
-    }
-}
-
-char translate_keycode(uint64_t keycode, int caps) {
-    if (caps) {
-        switch (keycode) {
-        case KEYCODE_SPACE:
-            return ' ';
-        case KEYCODE_QUOTE:
-            return '"';
-        case KEYCODE_COMMA:
-            return ',';
-        case KEYCODE_MINUS:
-            return '_';
-        case KEYCODE_PERIOD:
-            return '.';
-        case KEYCODE_FORWARD_SLASH:
-            return '?';
-        case KEYCODE_0:
-            return ')';
-        case KEYCODE_1:
-            return '!';
-        case KEYCODE_2:
-            return '@';
-        case KEYCODE_3:
-            return '#';
-        case KEYCODE_4:
-            return '$';
-        case KEYCODE_5:
-            return '%';
-        case KEYCODE_6:
-            return '^';
-        case KEYCODE_7:
-            return '&';
-        case KEYCODE_8:
-            return '*';
-        case KEYCODE_9:
-            return '(';
-        case KEYCODE_SEMI_COLON:
-            return ':';
-        case KEYCODE_EQUAL:
-            return '+';
-        case KEYCODE_OPEN_SQUARE_BRACKET:
-            return '{';
-        case KEYCODE_BACKSLASH:
-            return '|';
-        case KEYCODE_CLOSE_SQUARE_BRACKET:
-            return '}';
-        case KEYCODE_TICK:
-            return '~';
-        default:
-            return ((char)keycode) - 'a' + 'A';
-        }
-    } else {
-        return (char)keycode;
-    }
-}
-
-uint64_t read_line(char* buffer, uint64_t buffer_length) {
-    uint64_t idx = 0;
-    while (idx < buffer_length) {
-        Pair p = read_char();
-        uint64_t keycode = p.one;
-        uint64_t keystate = p.two;
-
-        if (keycode == KEYCODE_NUM_ASTERICK) {
-            buffer[idx] = '*';
-            console_write('*');
-            idx++;
-        } else if (keycode == KEYCODE_NUM_MINUS) {
-            buffer[idx] = '-';
-            console_write('-');
-            idx++;
-        } else if (keycode == KEYCODE_NUM_PLUS) {
-            buffer[idx] = '+';
-            console_write('+');
-            idx++;
-        } else if (keycode == KEYCODE_NUM_PERIOD) {
-            buffer[idx] = '.';
-            console_write('.');
-            idx++;
-        } else if ((keycode >= KEYCODE_SPACE && keycode <= KEYCODE_EQUAL) || (keycode >= KEYCODE_OPEN_SQUARE_BRACKET && keycode <= KEYCODE_Z)) {
-            int caps_status = 0;
-            if (keystate & KEY_STATE_CAPS_LOCK) {
-                caps_status = !caps_status;
-            }
-
-            if ((keystate & KEY_STATE_LEFT_SHIFT) || (keystate & KEY_STATE_RIGHT_SHIFT)) {
-                caps_status = !caps_status;
-            }
-
-            char c = translate_keycode(keycode, caps_status);
-
-            buffer[idx] = c;
-            console_write(c);
-            idx++;
-        } else if (keycode == KEYCODE_BACKSPACE) {
-            if (idx > 0) {
-                idx--;
-                console_write('\b');
-            }
-        } else if (keycode == KEYCODE_TAB) {
-            if (idx % TAB_WIDTH == 0) {
-                buffer[idx] = ' ';
-                console_write(' ');
-                idx++;
-            }
-
-            for (int i = 0; i < TAB_WIDTH && idx < buffer_length && idx % TAB_WIDTH != 0; i++, idx++) {
-                buffer[idx] = ' ';
-                console_write(' ');
-            }
-        } else if (keycode == KEYCODE_ENTER) {
-            buffer[idx] = 0;
-            console_write('\n');
-            return idx;
-        }
-    }
-
-    return idx;
-}
-
-int parse_arguments(char* buffer) {
-    command = strtok(buffer, " ");
-    arg_list[0] = command;
-
-    for (int i = 1; i < 256; i++) {
-        arg_list[i] = strtok(NULL, " ");
-        if (arg_list[i] == NULL)
-            return i;
-    }
-
-    return 255;
-}
-
-int main(int argc, const char** argv, const char** envp) {
-    console_clear();
-    console_write_str("\n    Lance OS Shell\n");
-    console_write_str("======================\n\n");
-
-    char cwd_buffer[BUFFER_LENGTH];
-    char buffer[BUFFER_LENGTH];
+    char* command_buffer;
+    char** argv;
 
     while (1) {
-        get_current_working_directory(cwd_buffer, BUFFER_LENGTH);
-        console_write_str(cwd_buffer);
-        console_write_str("> ");
-        read_line(buffer, BUFFER_LENGTH);
-        if (buffer[0] == 0) {
+        get_current_working_directory(cwd, BUFFER_LENGTH);
+        printf("%s> ", cwd);
+        read_line(&command_buffer);
+        if (command_buffer[0] == 0) {
+            free(command_buffer);
             continue;
         }
 
-        int argc = parse_arguments(buffer);
+        int argc = parse_arguments(command_buffer, &argv);
 
-        if (strcmp(command, "exit") == 0) {
-            break;
-        } else if (strcmp(command, "cd") == 0) {
-            if (argc >= 2) {
-                int64_t status = set_current_working_directory(arg_list[1]);
-                if (status < 0)
-                    printf("Error while opening %s: %li\n", arg_list[1], status);
-            }
-        } else if (strcmp(command, "clear") == 0) {
-            console_clear();
-        } else if (strcmp(command, "export") == 0) {
-            if (argc >= 3)
-                setenv(arg_list[1], arg_list[2], 1);
-        } else {
-            ProcessID pid = execute(command, (const char**)arg_list, (const char**)environ);
+        if (run_internal_command(argc, (const char*)argv) == 0) {
+            ProcessID pid = execute(argv[0], (const char**)argv, (const char**)environ);
             if (pid < 0) {
-                printf("Error while executing %s: %li\n", command, pid);
+                printf("Error while executing %s: %li\n", argv[0], pid);
+                free(command_buffer);
+                free(argv);
                 continue;
             }
 
@@ -210,5 +39,8 @@ int main(int argc, const char** argv, const char** envp) {
             if (status != 0)
                 printf("Process exited with status %li\n", status);
         }
+
+        free(command_buffer);
+        free(argv);
     }
 }
