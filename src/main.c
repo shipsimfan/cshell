@@ -2,8 +2,92 @@
 #include <los.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define BUFFER_LENGTH 1024
+
+void execute_command(const char* command, const char** argv) {
+    ProcessID pid = execute(command, (const char**)argv, (const char**)environ);
+    if (pid < 0)
+        printf("Error while executing %s: %li\n", argv[0], pid);
+    else {
+        int64_t status = wait_process(pid);
+
+        if (status != 0)
+            printf("Process exited with status %li\n", status);
+    }
+}
+
+void run_command(int argc, const char** argv) {
+    int search_path = 1;
+    int search_extension = 1;
+    const char* ptr = (const char*)argv[0];
+    while (*ptr) {
+        if (*ptr == '\\' || *ptr == '/') {
+            search_path = 0;
+            break;
+        }
+
+        if (*ptr == '.')
+            search_extension = 0;
+
+        ptr++;
+    }
+
+    if (search_path) {
+        char* original_path = getenv("PATH");
+        if (original_path != NULL) {
+            char* path = (char*)malloc(strlen(original_path) + 1);
+            char* ptr = original_path;
+            int i = 0;
+            while (*ptr) {
+                path[i] = *ptr;
+
+                i++;
+                ptr++;
+            }
+
+            path[i] = *ptr;
+
+            int cmd_length = strlen(argv[0]);
+
+            ptr = strtok(path, ";");
+            while (ptr != NULL) {
+                int path_length = strlen(ptr);
+                int padding = 1;
+                if (ptr[path_length - 1] != '\\' || ptr[path_length - 1] != '/')
+                    padding = 2;
+
+                int filepath_length = path_length + cmd_length + padding + (search_extension * 4);
+                char* filepath = (char*)malloc(filepath_length);
+                strcpy(filepath, ptr);
+                if (padding == 2)
+                    strcat(filepath, "/");
+                strcat(filepath, argv[0]);
+
+                int64_t fd = open_file(filepath);
+                if (fd >= 0) {
+                    close_file(fd);
+
+                    execute_command(filepath, argv);
+                    return;
+                } else if (search_extension) {
+                    strcat(filepath, ".app");
+                    int64_t fd = open_file(filepath);
+                    if (fd >= 0) {
+                        close_file(fd);
+                        execute_command(filepath, argv);
+                        return;
+                    }
+                }
+
+                ptr = strtok(NULL, ";");
+            }
+        }
+    }
+
+    execute_command(argv[0], argv);
+}
 
 int main() {
     printf("\n    Lance OS Shell\n");
@@ -25,20 +109,8 @@ int main() {
 
         int argc = parse_arguments(command_buffer, &argv);
 
-        if (run_internal_command(argc, (const char*)argv) == 0) {
-            ProcessID pid = execute(argv[0], (const char**)argv, (const char**)environ);
-            if (pid < 0) {
-                printf("Error while executing %s: %li\n", argv[0], pid);
-                free(command_buffer);
-                free(argv);
-                continue;
-            }
-
-            int64_t status = wait_process(pid);
-
-            if (status != 0)
-                printf("Process exited with status %li\n", status);
-        }
+        if (run_internal_command(argc, (const char**)argv) == 0)
+            run_command(argc, (const char**)argv);
 
         free(command_buffer);
         free(argv);
