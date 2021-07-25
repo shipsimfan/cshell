@@ -3,6 +3,7 @@
 #include <los.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define TAB_WIDTH 4
 #define BUFFER_STARTING_SIZE 2
@@ -18,7 +19,7 @@ KeyEvent read_char() {
     while (1) {
         while ((status = peek_event(&e))) {
             if (status != 1) {
-                printf("Error while peeking event: %li\n", status);
+                printf("Error while peeking event: %s\n", strerror(status));
                 exit(1);
             }
 

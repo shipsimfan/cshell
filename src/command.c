@@ -13,7 +13,7 @@ void cmd_cd(int argc, const char** argv) {
     if (argc >= 2) {
         int64_t status = set_current_working_directory(argv[1]);
         if (status < 0)
-            printf("Error while opening %s: %li\n", argv[0], status);
+            printf("Error while opening %s: %s\n", argv[0], strerror(status));
     }
 }
 

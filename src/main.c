@@ -9,7 +9,7 @@
 void execute_command(const char* command, const char** argv) {
     ProcessID pid = execute(command, (const char**)argv, (const char**)environ);
     if (pid < 0)
-        printf("Error while executing %s: %li\n", argv[0], pid);
+        printf("Error while executing %s: %s\n", argv[0], strerror(pid));
     else {
         int64_t status = wait_process(pid);
 
