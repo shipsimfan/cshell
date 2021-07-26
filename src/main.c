@@ -6,15 +6,25 @@
 
 #define BUFFER_LENGTH 1024
 
-void execute_command(const char* command, const char** argv) {
+void execute_command(const char* command, const char** argv, int argc) {
+    // Check for run type
+    int wait = 1;
+    if (strcmp(argv[argc - 1], "&") == 0) {
+        wait = 0;
+        argv[argc - 1] = NULL;
+    }
+
     ProcessID pid = execute(command, (const char**)argv, (const char**)environ);
     if (pid < 0)
         printf("Error while executing %s: %s\n", argv[0], strerror(pid));
     else {
-        int64_t status = wait_process(pid);
+        if (wait) {
+            int64_t status = wait_process(pid);
 
-        if (status != 0)
-            printf("Process exited with status %li\n", status);
+            if (status != 0)
+                printf("Process exited with status %li\n", status);
+        } else
+            printf("Started background process as %li\n", pid);
     }
 }
 
@@ -69,14 +79,14 @@ void run_command(int argc, const char** argv) {
                 if (fd >= 0) {
                     close_file(fd);
 
-                    execute_command(filepath, argv);
+                    execute_command(filepath, argv, argc);
                     return;
                 } else if (search_extension) {
                     strcat(filepath, ".app");
                     int64_t fd = open_file(filepath);
                     if (fd >= 0) {
                         close_file(fd);
-                        execute_command(filepath, argv);
+                        execute_command(filepath, argv, argc);
                         return;
                     }
                 }
@@ -86,7 +96,7 @@ void run_command(int argc, const char** argv) {
         }
     }
 
-    execute_command(argv[0], argv);
+    execute_command(argv[0], argv, argc);
 }
 
 int main() {
