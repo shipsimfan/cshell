@@ -75,7 +75,7 @@ void run_command(int argc, const char** argv) {
                     strcat(filepath, "/");
                 strcat(filepath, argv[0]);
 
-                int64_t fd = open_file(filepath);
+                int64_t fd = open_file(filepath, OPEN_READ);
                 if (fd >= 0) {
                     close_file(fd);
 
@@ -83,7 +83,7 @@ void run_command(int argc, const char** argv) {
                     return;
                 } else if (search_extension) {
                     strcat(filepath, ".app");
-                    int64_t fd = open_file(filepath);
+                    int64_t fd = open_file(filepath, OPEN_READ);
                     if (fd >= 0) {
                         close_file(fd);
                         execute_command(filepath, argv, argc);
