@@ -6,6 +6,15 @@
 
 #define BUFFER_LENGTH 1024
 
+const StandardIO stdio = {
+    STDIO_TYPE_CONSOLE,
+    0,
+    STDIO_TYPE_CONSOLE,
+    0,
+    STDIO_TYPE_CONSOLE,
+    0
+};
+
 void execute_command(const char* command, const char** argv, int argc) {
     // Check for run type
     int wait = 1;
@@ -14,7 +23,7 @@ void execute_command(const char* command, const char** argv, int argc) {
         argv[argc - 1] = NULL;
     }
 
-    ProcessID pid = execute(command, (const char**)argv, (const char**)environ);
+    ProcessID pid = execute(command, (const char**)argv, (const char**)environ, &stdio);
     if (pid < 0)
         printf("Error while executing %s: %s\n", argv[0], strerror(pid));
     else {
@@ -100,6 +109,8 @@ void run_command(int argc, const char** argv) {
 }
 
 int main() {
+    setvbuf(stdout, NULL, _IONBF, 0);
+
     printf("\n    Lance OS Shell\n");
     printf("======================\n\n");
 
