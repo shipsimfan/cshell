@@ -81,7 +81,9 @@ char translate_keycode(uint64_t keycode, int caps) {
         case KEYCODE_TICK:
             return '~';
         default:
-            return ((char)keycode) - 'a' + 'A';
+            if ((char)keycode >= 'a' && (char)keycode <= 'z')
+                return ((char)keycode) - 'a' + 'A';
+            return (char)keycode;
         }
     } else {
         return (char)keycode;
