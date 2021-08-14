@@ -12,8 +12,7 @@ const StandardIO stdio = {
     STDIO_TYPE_CONSOLE,
     0,
     STDIO_TYPE_CONSOLE,
-    0
-};
+    0};
 
 void execute_command(const char* command, const char** argv, int argc) {
     // Check for run type
@@ -28,7 +27,7 @@ void execute_command(const char* command, const char** argv, int argc) {
         printf("Error while executing %s: %s\n", argv[0], strerror(pid));
     else {
         if (wait) {
-            int64_t status = wait_process(pid);
+            isize status = wait_process(pid);
 
             if (status != 0)
                 printf("Process exited with status %li\n", status);
@@ -84,7 +83,7 @@ void run_command(int argc, const char** argv) {
                     strcat(filepath, "/");
                 strcat(filepath, argv[0]);
 
-                int64_t fd = open_file(filepath, OPEN_READ);
+                isize fd = open_file(filepath, OPEN_READ);
                 if (fd >= 0) {
                     close_file(fd);
 
@@ -92,7 +91,7 @@ void run_command(int argc, const char** argv) {
                     return;
                 } else if (search_extension) {
                     strcat(filepath, ".app");
-                    int64_t fd = open_file(filepath, OPEN_READ);
+                    isize fd = open_file(filepath, OPEN_READ);
                     if (fd >= 0) {
                         close_file(fd);
                         execute_command(filepath, argv, argc);

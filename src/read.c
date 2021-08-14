@@ -9,13 +9,13 @@
 #define BUFFER_STARTING_SIZE 2
 
 typedef struct {
-    uint64_t code;
-    uint64_t state;
+    usize code;
+    usize state;
 } KeyEvent;
 
 KeyEvent read_char() {
     Event e;
-    int64_t status;
+    isize status;
     while (1) {
         while ((status = peek_event(&e))) {
             if (status != 1) {
@@ -33,7 +33,7 @@ KeyEvent read_char() {
     }
 }
 
-char translate_keycode(uint64_t keycode, int caps) {
+char translate_keycode(usize keycode, int caps) {
     if (caps) {
         switch (keycode) {
         case KEYCODE_SPACE:
@@ -90,11 +90,11 @@ char translate_keycode(uint64_t keycode, int caps) {
     }
 }
 
-uint64_t insert_char(char** buffer, uint64_t* buffer_length, char c, uint64_t idx) {
+usize insert_char(char** buffer, usize* buffer_length, char c, usize idx) {
     if (idx == *buffer_length) {
-        uint64_t new_length = *buffer_length * 2;
+        usize new_length = *buffer_length * 2;
         char* new_buffer = (char*)malloc(new_length);
-        for (uint64_t i = 0; i < *buffer_length; i++)
+        for (usize i = 0; i < *buffer_length; i++)
             new_buffer[i] = (*buffer)[i];
         free(*buffer);
         *buffer_length = new_length;
@@ -106,11 +106,11 @@ uint64_t insert_char(char** buffer, uint64_t* buffer_length, char c, uint64_t id
     return idx + 1;
 }
 
-uint64_t read_line(char** buffer) {
-    uint64_t buffer_length = BUFFER_STARTING_SIZE;
+usize read_line(char** buffer) {
+    usize buffer_length = BUFFER_STARTING_SIZE;
     *buffer = (char*)malloc(buffer_length);
 
-    uint64_t idx = 0;
+    usize idx = 0;
     while (1) {
         KeyEvent key = read_char();
 
