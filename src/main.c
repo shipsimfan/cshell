@@ -6,14 +6,6 @@
 
 #define BUFFER_LENGTH 1024
 
-const StandardIO stdio = {
-    STDIO_TYPE_CONSOLE,
-    0,
-    STDIO_TYPE_CONSOLE,
-    0,
-    STDIO_TYPE_CONSOLE,
-    0};
-
 void execute_command(const char* command, const char** argv, int argc) {
     // Check for run type
     int wait = 1;
@@ -22,7 +14,8 @@ void execute_command(const char* command, const char** argv, int argc) {
         argv[argc - 1] = NULL;
     }
 
-    ProcessID pid = execute(command, (const char**)argv, (const char**)environ, &stdio);
+    ProcessID pid = execute(command, (const char**)argv, (const char**)environ,
+                            NULL, false);
     if (pid < 0)
         printf("Error while executing %s: %s\n", argv[0], strerror(pid));
     else {
@@ -76,7 +69,8 @@ void run_command(int argc, const char** argv) {
                 if (ptr[path_length - 1] != '\\' || ptr[path_length - 1] != '/')
                     padding = 2;
 
-                int filepath_length = path_length + cmd_length + padding + (search_extension * 4);
+                int filepath_length =
+                    path_length + cmd_length + padding + (search_extension * 4);
                 char* filepath = (char*)malloc(filepath_length);
                 strcpy(filepath, ptr);
                 if (padding == 2)
@@ -109,6 +103,7 @@ void run_command(int argc, const char** argv) {
 
 int main() {
     setvbuf(stdout, NULL, _IONBF, 0);
+    set_signal_type(SIGNAL_INTERRUPT, SIGNAL_TYPE_IGNORE);
 
     printf("\n    Lance OS Shell\n");
     printf("======================\n\n");
