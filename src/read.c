@@ -17,18 +17,17 @@ KeyEvent read_char() {
     Event e;
     isize status;
     while (1) {
-        while ((status = peek_event(&e))) {
-            if (status != 1) {
-                printf("Error while peeking event: %s\n", strerror(status));
-                exit(1);
-            }
+        status = poll_event(&e);
+        if (status < 0) {
+            printf("Error while peeking event: %s\n", strerror(status));
+            exit(1);
+        }
 
-            if (e.type == EVENT_TYPE_KEY_PRESS) {
-                KeyEvent key;
-                key.code = e.param1;
-                key.state = e.param2;
-                return key;
-            }
+        if (e.type == EVENT_TYPE_KEY_PRESS) {
+            KeyEvent key;
+            key.code = e.param1;
+            key.state = e.param2;
+            return key;
         }
     }
 }
@@ -126,12 +125,15 @@ usize read_line(char** buffer) {
         } else if (key.code == KEYCODE_NUM_PERIOD) {
             idx = insert_char(buffer, &buffer_length, '.', idx);
             printf(".");
-        } else if ((key.code >= KEYCODE_SPACE && key.code <= KEYCODE_EQUAL) || (key.code >= KEYCODE_OPEN_SQUARE_BRACKET && key.code <= KEYCODE_Z)) {
+        } else if ((key.code >= KEYCODE_SPACE && key.code <= KEYCODE_EQUAL) ||
+                   (key.code >= KEYCODE_OPEN_SQUARE_BRACKET &&
+                    key.code <= KEYCODE_Z)) {
             int caps_status = 0;
             if (key.state & KEY_STATE_CAPS_LOCK)
                 caps_status = !caps_status;
 
-            if ((key.state & KEY_STATE_LEFT_SHIFT) || (key.state & KEY_STATE_RIGHT_SHIFT))
+            if ((key.state & KEY_STATE_LEFT_SHIFT) ||
+                (key.state & KEY_STATE_RIGHT_SHIFT))
                 caps_status = !caps_status;
 
             char c = translate_keycode(key.code, caps_status);
@@ -149,7 +151,9 @@ usize read_line(char** buffer) {
                 printf(" ");
             }
 
-            for (int i = 0; i < TAB_WIDTH && idx < buffer_length && idx % TAB_WIDTH != 0; i++, idx++) {
+            for (int i = 0;
+                 i < TAB_WIDTH && idx < buffer_length && idx % TAB_WIDTH != 0;
+                 i++, idx++) {
                 idx = insert_char(buffer, &buffer_length, ' ', idx);
                 printf(" ");
             }
