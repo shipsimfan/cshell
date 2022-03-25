@@ -116,7 +116,9 @@ int main() {
     while (1) {
         get_current_working_directory(cwd, BUFFER_LENGTH);
         printf("%s> ", cwd);
+        console_set_cursor_state(true);
         read_line(&command_buffer);
+        console_set_cursor_state(false);
         if (command_buffer[0] == 0) {
             free(command_buffer);
             continue;
