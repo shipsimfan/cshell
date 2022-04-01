@@ -18,6 +18,9 @@ KeyEvent read_char() {
     isize status;
     while (1) {
         status = poll_event(&e);
+        if (status == EINT)
+            continue;
+
         if (status < 0) {
             printf("Error while peeking event: %s\n", strerror(status));
             exit(1);
@@ -112,6 +115,9 @@ usize read_line(char** buffer) {
     usize idx = 0;
     while (1) {
         KeyEvent key = read_char();
+
+        if (key.state & KEY_STATE_LEFT_CTRL || key.state & KEY_STATE_RIGHT_CTRL)
+            continue;
 
         if (key.code == KEYCODE_NUM_ASTERICK) {
             idx = insert_char(buffer, &buffer_length, '*', idx);

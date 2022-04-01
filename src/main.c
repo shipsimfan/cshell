@@ -1,10 +1,23 @@
 #include "shell.h"
 #include <los.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define BUFFER_LENGTH 1024
+
+bool cursor_blink;
+bool current_cursor_state;
+
+void blink_cursor(int sig) {
+    if (cursor_blink) {
+        current_cursor_state = !current_cursor_state;
+        console_set_cursor_state(current_cursor_state);
+        set_alarm(1000);
+    } else
+        current_cursor_state = false;
+}
 
 void execute_command(const char* command, const char** argv, int argc) {
     // Check for run type
@@ -103,7 +116,8 @@ void run_command(int argc, const char** argv) {
 
 int main() {
     setvbuf(stdout, NULL, _IONBF, 0);
-    set_signal_type(SIGNAL_INTERRUPT, SIGNAL_TYPE_IGNORE);
+    signal(SIGINT, SIG_IGN);
+    signal(SIGALRM, blink_cursor);
 
     printf("\n    Lance OS Shell\n");
     printf("======================\n\n");
@@ -116,9 +130,19 @@ int main() {
     while (1) {
         get_current_working_directory(cwd, BUFFER_LENGTH);
         printf("%s> ", cwd);
-        console_set_cursor_state(true);
+
+        if (!current_cursor_state) {
+            cursor_blink = true;
+            current_cursor_state = true;
+            console_set_cursor_state(true);
+            set_alarm(1000);
+        }
+
         read_line(&command_buffer);
+
+        cursor_blink = false;
         console_set_cursor_state(false);
+
         if (command_buffer[0] == 0) {
             free(command_buffer);
             continue;
