@@ -6,17 +6,20 @@
 #include <string.h>
 
 #define BUFFER_LENGTH 1024
+#define BLINK_TIME 500
 
 bool cursor_blink;
 bool current_cursor_state;
+bool outstanding_alarm;
 
 void blink_cursor(int sig) {
     if (cursor_blink) {
         current_cursor_state = !current_cursor_state;
         console_set_cursor_state(current_cursor_state);
-        set_alarm(1000);
+        set_alarm(BLINK_TIME);
+        outstanding_alarm = true;
     } else
-        current_cursor_state = false;
+        outstanding_alarm = false;
 }
 
 void execute_command(const char* command, const char** argv, int argc) {
@@ -127,20 +130,27 @@ int main() {
     char* command_buffer;
     char** argv;
 
+    outstanding_alarm = false;
+
     while (1) {
         get_current_working_directory(cwd, BUFFER_LENGTH);
         printf("%s> ", cwd);
 
+        cursor_blink = true;
+        if (!outstanding_alarm) {
+            set_alarm(BLINK_TIME);
+            outstanding_alarm = true;
+        }
+
         if (!current_cursor_state) {
-            cursor_blink = true;
             current_cursor_state = true;
             console_set_cursor_state(true);
-            set_alarm(1000);
         }
 
         read_line(&command_buffer);
 
         cursor_blink = false;
+        current_cursor_state = false;
         console_set_cursor_state(false);
 
         if (command_buffer[0] == 0) {
